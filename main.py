@@ -1,30 +1,35 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
-from skimage import measure, io, color, exposure, morphology
+from skimage import measure, io, color, exposure, morphology, filters
 
 
 def find_contours(image):
     # Ustal wartości percentyli dla jasności obrazu
     intensityP = 1
-    intensityK = 20
+    intensityK = 25
     pp, pk = np.percentile(image, (intensityP, intensityK))
 
     # Przeskaluj intensywność obrazu
     image_rescaled = exposure.rescale_intensity(image, in_range=(pp, pk))
 
+    # Wygładź obraz filtrem Gaussa
+    smoothed_image = filters.gaussian(image_rescaled, sigma=1.5)
+
     # Konwersja do przestrzeni barw HSV
-    hsv_image = color.rgb2hsv(image_rescaled)
+    hsv_image = color.rgb2hsv(smoothed_image)
 
     # Utwórz obraz czarno-biały na podstawie kanału wartości (V)
     black_white = 1 - hsv_image[:, :, 2]
 
-    # Zastosuj operacje morfologiczne, aby wyostrzyć i zmienić kształt konturów
-    black_white = morphology.erosion(black_white)
-    black_white = morphology.dilation(black_white)
+    # Progowanie obrazu, aby wyodrębnić obszary samolotów
+    threshold_value = filters.threshold_otsu(black_white)
+    thresholded_image = black_white > threshold_value
 
-    # Znajdź kontury
-    contours = measure.find_contours(black_white, 0.3)
+    # Zastosuj operacje morfologiczne, aby wyostrzyć i zmienić kształt konturów
+    processed_image = morphology.closing(thresholded_image, morphology.disk(3))
+
+    # Znajdź kontury na przetworzonym obrazie
+    contours = measure.find_contours(processed_image, 0.3)
 
     # Przygotowanie kolorów konturów
     colors = plt.cm.jet(np.linspace(0, 1, len(contours)))  # Generowanie kolorów dla każdego konturu
@@ -38,6 +43,7 @@ def main():
               'planes/samolot08.jpg', 'planes/samolot09.jpg', 'planes/samolot10.jpg', 'planes/samolot11.jpg',
               'planes/samolot12.jpg', 'planes/samolot13.jpg', 'planes/samolot14.jpg', 'planes/samolot15.jpg',
               'planes/samolot16.jpg', 'planes/samolot17.jpg']
+    # planes = ['planes/samolot02.jpg']
     planes_img = [io.imread(plane) for plane in planes]
 
     fig, axes = plt.subplots(6, 3, figsize=(30, 60))  # Tworzenie siatki 6x3 subplotów
