@@ -5,7 +5,7 @@ from skimage import measure, io, color, exposure, morphology, filters
 
 def find_contours(image):
     # Zwiększenie kontrastu obrazu
-    contrast_image = exposure.adjust_sigmoid(image, gain=15, cutoff=0.3)
+    contrast_image = exposure.adjust_sigmoid(image, gain=10, cutoff=0.4)
 
     # Ustal wartości percentyli dla jasności obrazu
     intensityP = 1
