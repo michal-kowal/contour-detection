@@ -4,13 +4,16 @@ from skimage import measure, io, color, exposure, morphology, filters
 
 
 def find_contours(image):
+    # Zwiększenie kontrastu obrazu
+    contrast_image = exposure.adjust_sigmoid(image, gain=15, cutoff=0.3)
+
     # Ustal wartości percentyli dla jasności obrazu
     intensityP = 1
     intensityK = 25
-    pp, pk = np.percentile(image, (intensityP, intensityK))
+    pp, pk = np.percentile(contrast_image, (intensityP, intensityK))
 
     # Przeskaluj intensywność obrazu
-    image_rescaled = exposure.rescale_intensity(image, in_range=(pp, pk))
+    image_rescaled = exposure.rescale_intensity(contrast_image, in_range=(pp, pk))
 
     # Konwersja do przestrzeni barw HSV
     hsv_image = color.rgb2hsv(image_rescaled)
@@ -22,6 +25,7 @@ def find_contours(image):
     threshold_value = filters.threshold_otsu(black_white)
     thresholded_image = black_white > threshold_value
 
+    # thresholded_image = morphology.erosion(thresholded_image, morphology.disk(2))
     for i in range(3):
         # Dylatacja
         thresholded_image = morphology.dilation(thresholded_image, morphology.disk(2))
@@ -30,7 +34,7 @@ def find_contours(image):
     smoothed_image = filters.gaussian(thresholded_image, sigma=1.5)
 
     # Zastosuj operacje morfologiczne, aby wyostrzyć i zmienić kształt konturów
-    # smoothed_image = morphology.closing(smoothed_image, morphology.disk(4))
+    smoothed_image = morphology.closing(smoothed_image, morphology.disk(4))
 
     # Znajdź kontury na przetworzonym obrazie
     contours = measure.find_contours(smoothed_image, 0.5)
