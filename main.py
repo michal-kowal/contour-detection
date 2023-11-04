@@ -12,11 +12,8 @@ def find_contours(image):
     # Przeskaluj intensywność obrazu
     image_rescaled = exposure.rescale_intensity(image, in_range=(pp, pk))
 
-    # Wygładź obraz filtrem Gaussa
-    smoothed_image = filters.gaussian(image_rescaled, sigma=1.5)
-
     # Konwersja do przestrzeni barw HSV
-    hsv_image = color.rgb2hsv(smoothed_image)
+    hsv_image = color.rgb2hsv(image_rescaled)
 
     # Utwórz obraz czarno-biały na podstawie kanału wartości (V)
     black_white = 1 - hsv_image[:, :, 2]
@@ -25,11 +22,18 @@ def find_contours(image):
     threshold_value = filters.threshold_otsu(black_white)
     thresholded_image = black_white > threshold_value
 
+    for i in range(3):
+        # Dylatacja
+        thresholded_image = morphology.dilation(thresholded_image, morphology.disk(2))
+
+    # Wygładź obraz filtrem Gaussa
+    smoothed_image = filters.gaussian(thresholded_image, sigma=1.5)
+
     # Zastosuj operacje morfologiczne, aby wyostrzyć i zmienić kształt konturów
-    processed_image = morphology.closing(thresholded_image, morphology.disk(3))
+    # smoothed_image = morphology.closing(smoothed_image, morphology.disk(4))
 
     # Znajdź kontury na przetworzonym obrazie
-    contours = measure.find_contours(processed_image, 0.3)
+    contours = measure.find_contours(smoothed_image, 0.5)
 
     # Przygotowanie kolorów konturów
     colors = plt.cm.jet(np.linspace(0, 1, len(contours)))  # Generowanie kolorów dla każdego konturu
@@ -43,7 +47,7 @@ def main():
               'planes/samolot08.jpg', 'planes/samolot09.jpg', 'planes/samolot10.jpg', 'planes/samolot11.jpg',
               'planes/samolot12.jpg', 'planes/samolot13.jpg', 'planes/samolot14.jpg', 'planes/samolot15.jpg',
               'planes/samolot16.jpg', 'planes/samolot17.jpg']
-    # planes = ['planes/samolot02.jpg']
+
     planes_img = [io.imread(plane) for plane in planes]
 
     fig, axes = plt.subplots(6, 3, figsize=(30, 60))  # Tworzenie siatki 6x3 subplotów
