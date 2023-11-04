@@ -51,7 +51,16 @@ def find_contours(image):
     # Przygotowanie kolorów konturów
     colors = plt.cm.jet(np.linspace(0, 1, len(contours)))  # Generowanie kolorów dla każdego konturu
 
-    return contours, colors  # Zwrócenie konturów i przypisanych kolorów
+    # Wyodrębnienie centroidów i oznaczenie ich białymi kółkami
+    centroids = []
+    for contour in contours:
+        centroid = np.mean(contour, axis=0)
+        centroids.append(centroid)
+
+    # Konwersja do tablicy NumPy
+    centroids = np.array(centroids)
+
+    return contours, colors, centroids
 
 
 def main():
@@ -67,13 +76,16 @@ def main():
     fig.tight_layout()
 
     for i, plane in enumerate(planes_img):
-        contours, colors = find_contours(plane)
+        contours, colors, centroids = find_contours(plane)
 
         axes[int(i / 3), i % 3].imshow(plane)  # Wyświetlenie obrazu na subplotcie
         axes[int(i / 3), i % 3].axis('off')  # Wyłączenie osi na subplotcie
 
         for j, contour in enumerate(contours):
             axes[int(i / 3), i % 3].plot(contour[:, 1], contour[:, 0], linewidth=4, c=colors[j])
+
+        # Oznaczenie centroidów jako białe kółka
+        axes[int(i / 3), i % 3].plot(centroids[:, 1], centroids[:, 0], 'wo', markersize=5)
 
     # plt.show()
     plt.savefig('plot.pdf')
